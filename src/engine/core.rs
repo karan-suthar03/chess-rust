@@ -63,3 +63,24 @@ impl fmt::Display for Piece {
     }
 }
 
+#[derive(Eq, Hash, PartialEq, Copy, Clone, Debug)]
+pub struct Pos2d {
+    pub(crate) rank:u8,
+    pub(crate) file:u8
+}
+
+impl Pos2d {
+    pub fn from_index(index: usize) -> Pos2d {
+        let rank = (index / 8) as u8;
+        let file = (index % 8) as u8;
+        Pos2d {
+            rank,
+            file
+        }
+    }
+
+    pub fn to_index(&self) -> usize{
+        (self.file + self.rank*8) as usize
+    }
+}
+

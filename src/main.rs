@@ -2,9 +2,8 @@ mod engine;
 
 use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
-use crate::engine::core::Piece;
+use crate::engine::core::{Piece, Pos2d};
 use crate::engine::main_board::MainBoard;
-use crate::engine::main_board::Pos2d;
 
 
 const CELL_SIZE: f32 = 100f32/4f32;

@@ -1,28 +1,9 @@
 use std::collections::{HashMap, HashSet};
-use crate::engine::core::{Color, Piece};
+use crate::engine::core::{Color, Piece, Pos2d};
 
 #[derive(Debug)]
 pub struct MainBoard{
     board: [Piece; 64],
-}
-
-#[derive(Eq, Hash, PartialEq, Copy, Clone, Debug)]
-pub struct Pos2d {
-    pub(crate) rank:u8,
-    pub(crate) file:u8
-}
-
-fn to_2d_index(index: usize) -> Pos2d {
-    let rank = (index / 8) as u8;
-    let file = (index % 8) as u8;
-    Pos2d {
-        rank ,
-        file
-    }
-}
-
-fn from_2d_index(pos2d: Pos2d) -> usize{
-    (pos2d.file + pos2d.rank*8) as usize
 }
 
 impl MainBoard {
@@ -89,8 +70,8 @@ impl MainBoard {
             file:file as u8,
             rank:rank as u8
         };
-        let from_index = from_2d_index(from);
-        let to_index = from_2d_index(to);
+        let from_index = from.to_index();
+        let to_index = to.to_index();
         let piece = self.board[from_index];
         self.board[from_index] = Piece::None;
         self.board[to_index] = piece;
@@ -133,7 +114,7 @@ impl MainBoard {
             }
         }
 
-        let pos2d = to_2d_index(index);
+        let pos2d = Pos2d::from_index(index);
 
         let new_rank = pos2d.rank as i32 +(1*multiplier);
         if new_rank < 0 || new_rank > 7 {
@@ -146,51 +127,50 @@ impl MainBoard {
             rank: (pos2d.rank as i32 +(1*multiplier)) as u8
         };
 
-        let piece = self.board[from_2d_index(new_pos_2d)];
+        let piece = self.board[new_pos_2d.to_index()];
         if !piece.is_piece() {
             set.insert(new_pos_2d);
-        }
-
-        // two moves for the first time of a pawn
-        if (color == Color::White && pos2d.rank == 1) || (color == Color::Black && pos2d.rank == 6) {
-            let new_pos_2d = Pos2d{
-                rank: (new_pos_2d.rank as i32 + multiplier) as u8,
-                ..new_pos_2d
-            };
-            let piece = self.board[from_2d_index(new_pos_2d)];
-            if !piece.is_piece() {
-                set.insert(new_pos_2d);
+            // two moves for the first time of a pawn
+            if (color == Color::White && pos2d.rank == 1) || (color == Color::Black && pos2d.rank == 6) {
+                let new_pos_2d = Pos2d{
+                    rank: (new_pos_2d.rank as i32 + multiplier) as u8,
+                    ..new_pos_2d
+                };
+                let piece = self.board[new_pos_2d.to_index()];
+                if !piece.is_piece() {
+                    set.insert(new_pos_2d);
+                }
             }
         }
         {
-            let to_position_2d = Pos2d{
+            let attack_position_left = Pos2d{
                 file:new_pos_2d.file - 1,
                 ..new_pos_2d
             };
-            let index = from_2d_index(to_position_2d);
+            let index = attack_position_left.to_index();
             let piece = self.board[index];
 
             match piece.color() {
                 Some(piece_color) =>{
                     if piece_color != color {
-                        set.insert(to_position_2d);
+                        set.insert(attack_position_left);
                     }
                 }
                 _ =>{}
             }
         }
         {
-            let to_position_2d = Pos2d{
+            let attack_pos_right = Pos2d{
                 file:new_pos_2d.file + 1,
                 ..new_pos_2d
             };
-            let index = from_2d_index(to_position_2d);
+            let index = attack_pos_right.to_index();
             let piece = self.board[index];
 
             match piece.color() {
                 Some(piece_color) =>{
                     if piece_color != color {
-                        set.insert(to_position_2d);
+                        set.insert(attack_pos_right);
                     }
                 }
                 _ =>{}
