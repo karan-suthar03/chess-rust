@@ -1,29 +1,28 @@
 use std::collections::{HashMap, HashSet};
+use crate::engine::board::Board;
 use crate::engine::core::{Color, Piece, Pos2d};
 
 #[derive(Debug)]
-pub struct MainBoard{
-    board: [Piece; 64],
+pub struct Engine {
+    board: Board,
     turn: Color
 }
 
-impl MainBoard {
-    pub fn new() -> MainBoard{
-        let mut board = [Piece::None; 64];
-        board[0] = Piece::Pawn(Color::White);
-        board[7] = Piece::Pawn(Color::White);
-        MainBoard{
+impl Engine {
+    pub fn new() -> Self {
+        let board = Board::new();
+        Self {
             board,
             turn: Color::White
         }
     }
 
     pub fn get_piece_at(&self, loc_2d: Pos2d) -> Piece {
-        self.board[loc_2d.to_index()]
+        self.board.get(&loc_2d)
     }
 
-    pub fn new_from_fen(fen: &str) -> MainBoard{
-        let mut board = [Piece::None; 64];
+    pub fn new_from_fen(fen: &str) -> Self {
+        let mut board = Board::new();
         let mut map = HashMap::new();
         map.insert('k',Piece::King(Color::Black));
         map.insert('p',Piece::Pawn(Color::Black));
@@ -54,7 +53,7 @@ impl MainBoard {
                 if ch.is_ascii_digit() {
                     file+= ch.to_digit(10).unwrap() as usize;
                 }else{
-                    board[rank*8+file] = *map.get(&ch).unwrap_or(&Piece::None);
+                    board.set_at(&Pos2d::from_index(rank * 8 + file), *map.get(&ch).unwrap_or(&Piece::None));
                     file += 1;
                 }
             }
@@ -74,18 +73,16 @@ impl MainBoard {
 
         println!("{:?}", turn);
 
-        MainBoard{
+        Self {
             board,
             turn
         }
     }
 
-    pub fn make_move(&mut self, from: Pos2d, to: Pos2d) {
-        let from_index = from.to_index();
-        let to_index = to.to_index();
-        let piece = self.board[from_index];
-        self.board[from_index] = Piece::None;
-        self.board[to_index] = piece;
+    pub fn make_move(&mut self, from: &Pos2d, to: &Pos2d) {
+        let piece = self.board.get(&from);
+        self.board.set_at(&from,Piece::None);
+        self.board.set_at(&to,piece);
         self.turn = self.turn.flip();
     }
 
@@ -101,9 +98,8 @@ impl MainBoard {
     //     board_2d
     // }
 
-    pub fn moves_for(&mut self, new_pos:Pos2d) -> HashSet<Pos2d> {
-        let index = new_pos.to_index();
-        let piece = self.board[index];
+    pub fn moves_for(&mut self, new_pos:&Pos2d) -> HashSet<Pos2d> {
+        let piece = self.board.get(new_pos);
 
         let mut set = HashSet::new();
         match piece.color() {
@@ -111,7 +107,7 @@ impl MainBoard {
                 if color == self.turn {
                     match piece {
                         Piece::Pawn(color) => {
-                            self.get_pawn_moves(color, &mut set,index);
+                            self.get_pawn_moves(color, &mut set,&new_pos);
                         }
                         _ =>{}
                     }
@@ -122,7 +118,7 @@ impl MainBoard {
         set
     }
 
-    fn get_pawn_moves(&mut self, color: Color, set: &mut HashSet<Pos2d>,index:usize) {
+    fn get_pawn_moves(&mut self, color: Color, set: &mut HashSet<Pos2d>,pos2d: &Pos2d) {
         let multiplier:i32;
         match color {
             Color::White => {
@@ -133,8 +129,6 @@ impl MainBoard {
                 multiplier = -1;
             }
         }
-
-        let pos2d = Pos2d::from_index(index);
 
         let new_rank = pos2d.rank as i32 +(1*multiplier);
         if new_rank < 0 || new_rank > 7 {
@@ -147,7 +141,7 @@ impl MainBoard {
             rank: (pos2d.rank as i32 +(1*multiplier)) as u8
         };
 
-        let piece = self.board[new_pos_2d.to_index()];
+        let piece = self.board.get(&new_pos_2d);
         if !piece.is_piece() {
             set.insert(new_pos_2d);
             // two moves for the first time of a pawn
@@ -156,7 +150,7 @@ impl MainBoard {
                     rank: (new_pos_2d.rank as i32 + multiplier) as u8,
                     ..new_pos_2d
                 };
-                let piece = self.board[new_pos_2d.to_index()];
+                let piece = self.board.get(&new_pos_2d);
                 if !piece.is_piece() {
                     set.insert(new_pos_2d);
                 }
@@ -167,8 +161,7 @@ impl MainBoard {
                 file:new_pos_2d.file - 1,
                 ..new_pos_2d
             };
-            let index = attack_position_left.to_index();
-            let piece = self.board[index];
+            let piece = self.board.get(&attack_position_left);
 
             match piece.color() {
                 Some(piece_color) =>{
@@ -184,8 +177,7 @@ impl MainBoard {
                 file:new_pos_2d.file + 1,
                 ..new_pos_2d
             };
-            let index = attack_pos_right.to_index();
-            let piece = self.board[index];
+            let piece = self.board.get(&attack_pos_right);
 
             match piece.color() {
                 Some(piece_color) =>{
@@ -198,8 +190,9 @@ impl MainBoard {
         }
     }
 
+    // probably change soon
     pub fn display(&self) {
-        for (i, cell) in self.board.iter().rev().enumerate() {
+        for (i, cell) in self.board.board.iter().rev().enumerate() {
             print!(" {:}", cell);
             if (i + 1) % 8 == 0 {
                 println!();

@@ -3,7 +3,7 @@ mod engine;
 use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
 use crate::engine::core::*;
-use crate::engine::main_board::MainBoard;
+use crate::engine::engine::Engine;
 
 
 const CELL_SIZE: f32 = 100f32/4f32;
@@ -20,7 +20,7 @@ impl Selection {
 }
 
 struct Game<'a>{
-    board:MainBoard,
+    engine: Engine,
     texture_map: &'a HashMap<Piece, Texture2D>,
     selected:Option<Selection>,
 }
@@ -28,9 +28,9 @@ struct Game<'a>{
 impl<'a> Game<'a>{
     fn new(texture_map: &'a HashMap<Piece, Texture2D>) -> Game<'a>{
         let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        let board = MainBoard::new_from_fen(fen_board);
+        let engine = Engine::new_from_fen(fen_board);
         Game{
-            board,
+            engine,
             texture_map,
             selected:None
         }
@@ -43,7 +43,7 @@ impl<'a> Game<'a>{
                     file:x,
                     rank:y
                 };
-                let piece = self.board.get_piece_at(loc_2d);
+                let piece = self.engine.get_piece_at(loc_2d);
 
                 let mut color = if (x + y) % 2 == 0 {
                     DARKGRAY
@@ -109,18 +109,18 @@ impl<'a> Game<'a>{
                         self.selected = None;
                     }else {
                         if selection.moves.contains(&new_pos) {
-                            self.board.make_move(selection.cell,new_pos);
+                            self.engine.make_move(&selection.cell, &new_pos);
                             self.selected = None;
                         }else {
                             let mut selection = Selection::new(new_pos);
-                            selection.moves = self.board.moves_for(new_pos);
+                            selection.moves = self.engine.moves_for(&new_pos);
                             self.selected = Some(selection);
                         }
                     }
                 }
                 None => {
                     let mut selection = Selection::new(new_pos);
-                    selection.moves = self.board.moves_for(new_pos);
+                    selection.moves = self.engine.moves_for(&new_pos);
                     self.selected = Some(selection);
                 }
             }
@@ -247,8 +247,8 @@ fn main() {
     let test = false;
     if test {
         let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        let main_board = MainBoard::new_from_fen(fen_board);
-        main_board.display();
+        let engine = Engine::new_from_fen(fen_board);
+        engine.display();
     }else{
         run();
     }
