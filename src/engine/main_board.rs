@@ -4,6 +4,7 @@ use crate::engine::core::{Color, Piece, Pos2d};
 #[derive(Debug)]
 pub struct MainBoard{
     board: [Piece; 64],
+    turn: Color
 }
 
 impl MainBoard {
@@ -13,7 +14,12 @@ impl MainBoard {
         board[7] = Piece::Pawn(Color::White);
         MainBoard{
             board,
+            turn: Color::White
         }
+    }
+
+    pub fn get_piece_at(&self, loc_2d: Pos2d) -> Piece {
+        self.board[loc_2d.to_index()]
     }
 
     pub fn new_from_fen(fen: &str) -> MainBoard{
@@ -54,50 +60,64 @@ impl MainBoard {
             }
         }
 
+        let fen_turn = fen_parts[1];
+
+        println!("fen turn: {}", fen_turn);
+        let turn = match fen_turn {
+            "b" => {
+                Color::Black
+            }
+            _ => {
+                Color::White
+            }
+        };
+
+        println!("{:?}", turn);
+
         MainBoard{
             board,
+            turn
         }
     }
 
-    pub(crate) fn make_move(&mut self, from: (u32, u32), to: (u32, u32)) {
-        let (file, rank) = from;
-        let from = Pos2d{
-            file:file as u8,
-            rank:rank as u8
-        };
-        let (file, rank) = to;
-        let to = Pos2d{
-            file:file as u8,
-            rank:rank as u8
-        };
+    pub fn make_move(&mut self, from: Pos2d, to: Pos2d) {
         let from_index = from.to_index();
         let to_index = to.to_index();
         let piece = self.board[from_index];
         self.board[from_index] = Piece::None;
         self.board[to_index] = piece;
+        self.turn = self.turn.flip();
     }
 
-    pub(crate) fn get_drawable(&self) -> [[Piece;8];8] {
-        let mut board_2d = [[Piece::None; 8]; 8];
+    // pub(crate) fn get_drawable(&self) -> [[Piece;8];8] {
+    //     let mut board_2d = [[Piece::None; 8]; 8];
+    //
+    //     for (i, cell) in self.board.iter().enumerate() {
+    //         let rank = i / 8;
+    //         let file = i % 8;
+    //
+    //         board_2d[7 - rank][file] = *cell;
+    //     }
+    //     board_2d
+    // }
 
-        for (i, cell) in self.board.iter().enumerate() {
-            let rank = i / 8;
-            let file = i % 8;
-
-            board_2d[7 - rank][file] = *cell;
-        }
-        board_2d
-    }
-
-    pub(crate) fn moves_for(&mut self, p0: u32, p1: u32) -> HashSet<Pos2d> {
-        let index = (p1 * 8 + p0) as usize;
+    pub fn moves_for(&mut self, new_pos:Pos2d) -> HashSet<Pos2d> {
+        let index = new_pos.to_index();
         let piece = self.board[index];
+
         let mut set = HashSet::new();
-        match piece {
-            Piece::Pawn(color) => {
-                self.get_pawn_moves(color, &mut set,index);
+        match piece.color() {
+            Some(color) => {
+                if color == self.turn {
+                    match piece {
+                        Piece::Pawn(color) => {
+                            self.get_pawn_moves(color, &mut set,index);
+                        }
+                        _ =>{}
+                    }
+                }
             }
-            _ =>{}
+            None => {}
         }
         set
     }

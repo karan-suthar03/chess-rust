@@ -1,10 +1,18 @@
-use std::collections::HashMap;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color{
     White,
     Black,
 }
+
+impl Color{
+    pub fn flip(self) -> Self {
+        match self { 
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(Hash)]
 pub enum Piece{

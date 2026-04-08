@@ -2,20 +2,20 @@ mod engine;
 
 use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
-use crate::engine::core::{Piece, Pos2d};
+use crate::engine::core::*;
 use crate::engine::main_board::MainBoard;
 
 
 const CELL_SIZE: f32 = 100f32/4f32;
 
 struct Selection{
-    cell: (u32,u32),
+    cell: Pos2d,
     moves: HashSet<Pos2d>,
 }
 
 impl Selection {
-    fn new(x:u32,y:u32) -> Self {
-        Selection{cell: (x,y),moves: HashSet::new()}
+    fn new(pos2d: Pos2d) -> Self {
+        Selection{cell: pos2d,moves: HashSet::new()}
     }
 }
 
@@ -37,11 +37,13 @@ impl<'a> Game<'a>{
     }
     fn draw(&self){
 
-        let drawable = self.board.get_drawable();
-
         for y in 0..8{
             for x in 0..8{
-                let piece = drawable[7-y][x];
+                let loc_2d = Pos2d{
+                    file:x,
+                    rank:y
+                };
+                let piece = self.board.get_piece_at(loc_2d);
 
                 let mut color = if (x + y) % 2 == 0 {
                     DARKGRAY
@@ -50,15 +52,12 @@ impl<'a> Game<'a>{
                 };
 
                 if self.selected.is_some() {
-                    if self.selected.as_ref().unwrap().cell.0 == x as u32 && self.selected.as_ref().unwrap().cell.1 == y as u32 {
+                    if self.selected.as_ref().unwrap().cell == loc_2d {
                         color = BLUE;
                     }else { 
                         let selection = self.selected.as_ref().unwrap();
                         
-                        if selection.moves.contains(&Pos2d {
-                            file:x as u8,
-                            rank:y as u8,
-                        }) {
+                        if selection.moves.contains(&loc_2d) {
                             color = RED;
                         }
                         
@@ -100,27 +99,28 @@ impl<'a> Game<'a>{
         let board_y = 7 - by as u32;
 
         if input.clicked {
+            let new_pos = Pos2d{
+                file:board_x as u8,
+                rank:board_y as u8
+            };
             match self.selected.as_ref() {
                 Some(selection) => {
-                    if selection.cell.0 == board_x && selection.cell.1 == board_y {
+                    if selection.cell == new_pos {
                         self.selected = None;
                     }else {
-                        if selection.moves.contains(&Pos2d{
-                            file:board_x as u8,
-                            rank:board_y as u8
-                        }) {
-                            self.board.make_move(selection.cell,(board_x, board_y));
+                        if selection.moves.contains(&new_pos) {
+                            self.board.make_move(selection.cell,new_pos);
                             self.selected = None;
                         }else {
-                            let mut selection = Selection::new(board_x, board_y);
-                            selection.moves = self.board.moves_for(board_x, board_y);
+                            let mut selection = Selection::new(new_pos);
+                            selection.moves = self.board.moves_for(new_pos);
                             self.selected = Some(selection);
                         }
                     }
                 }
                 None => {
-                    let mut selection = Selection::new(board_x, board_y);
-                    selection.moves = self.board.moves_for(board_x, board_y);
+                    let mut selection = Selection::new(new_pos);
+                    selection.moves = self.board.moves_for(new_pos);
                     self.selected = Some(selection);
                 }
             }
