@@ -4,13 +4,14 @@ use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
 use crate::engine::core::Piece;
 use crate::engine::main_board::MainBoard;
+use crate::engine::main_board::Pos2d;
 
 
 const CELL_SIZE: f32 = 100f32/4f32;
 
 struct Selection{
     cell: (u32,u32),
-    moves: HashSet<(u32,u32)>,
+    moves: HashSet<Pos2d>,
 }
 
 impl Selection {
@@ -55,7 +56,10 @@ impl<'a> Game<'a>{
                     }else { 
                         let selection = self.selected.as_ref().unwrap();
                         
-                        if selection.moves.contains(&(x as u32, y as u32)) {
+                        if selection.moves.contains(&Pos2d {
+                            file:x as u8,
+                            rank:y as u8,
+                        }) {
                             color = RED;
                         }
                         
@@ -97,14 +101,25 @@ impl<'a> Game<'a>{
         let board_y = 7 - by as u32;
 
         if input.clicked {
-            if self.selected.is_none() {
-                let mut selection = Selection::new(board_x, board_y);
-                selection.moves = self.board.moves_for(board_x, board_y);
-                self.selected = Some(selection);
-            }else {
-                if self.selected.as_ref().unwrap().cell.0 == board_x && self.selected.as_ref().unwrap().cell.1 == board_y {
-                    self.selected = None;
-                }else {
+            match self.selected.as_ref() {
+                Some(selection) => {
+                    if selection.cell.0 == board_x && selection.cell.1 == board_y {
+                        self.selected = None;
+                    }else {
+                        if selection.moves.contains(&Pos2d{
+                            file:board_x as u8,
+                            rank:board_y as u8
+                        }) {
+                            self.board.make_move(selection.cell,(board_x, board_y));
+                            self.selected = None;
+                        }else {
+                            let mut selection = Selection::new(board_x, board_y);
+                            selection.moves = self.board.moves_for(board_x, board_y);
+                            self.selected = Some(selection);
+                        }
+                    }
+                }
+                None => {
                     let mut selection = Selection::new(board_x, board_y);
                     selection.moves = self.board.moves_for(board_x, board_y);
                     self.selected = Some(selection);

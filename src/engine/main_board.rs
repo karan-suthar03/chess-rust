@@ -6,10 +6,23 @@ pub struct MainBoard{
     board: [Piece; 64],
 }
 
-fn to_2d_index(index: usize) -> (u32,u32){
-    let rank = index / 8;
-    let file = index % 8;
-    (file as u32, rank as u32)
+#[derive(Eq, Hash, PartialEq, Copy, Clone, Debug)]
+pub struct Pos2d {
+    pub(crate) rank:u8,
+    pub(crate) file:u8
+}
+
+fn to_2d_index(index: usize) -> Pos2d {
+    let rank = (index / 8) as u8;
+    let file = (index % 8) as u8;
+    Pos2d {
+        rank ,
+        file
+    }
+}
+
+fn from_2d_index(pos2d: Pos2d) -> usize{
+    (pos2d.file + pos2d.rank*8) as usize
 }
 
 impl MainBoard {
@@ -65,6 +78,24 @@ impl MainBoard {
         }
     }
 
+    pub(crate) fn make_move(&mut self, from: (u32, u32), to: (u32, u32)) {
+        let (file, rank) = from;
+        let from = Pos2d{
+            file:file as u8,
+            rank:rank as u8
+        };
+        let (file, rank) = to;
+        let to = Pos2d{
+            file:file as u8,
+            rank:rank as u8
+        };
+        let from_index = from_2d_index(from);
+        let to_index = from_2d_index(to);
+        let piece = self.board[from_index];
+        self.board[from_index] = Piece::None;
+        self.board[to_index] = piece;
+    }
+
     pub(crate) fn get_drawable(&self) -> [[Piece;8];8] {
         let mut board_2d = [[Piece::None; 8]; 8];
 
@@ -77,12 +108,10 @@ impl MainBoard {
         board_2d
     }
 
-    pub(crate) fn moves_for(&mut self, p0: u32, p1: u32) -> HashSet<(u32, u32)> {
+    pub(crate) fn moves_for(&mut self, p0: u32, p1: u32) -> HashSet<Pos2d> {
         let index = (p1 * 8 + p0) as usize;
         let piece = self.board[index];
         let mut set = HashSet::new();
-
-
         match piece {
             Piece::Pawn(color) => {
                 self.get_pawn_moves(color, &mut set,index);
@@ -92,13 +121,80 @@ impl MainBoard {
         set
     }
 
-    fn get_pawn_moves(&mut self, color: Color, set: &mut HashSet<(u32, u32)>,index:usize) {
-        if color == Color::White {
-            set.insert(to_2d_index(index+8));
-            set.insert(to_2d_index(index+16));
-        }else {
-            set.insert(to_2d_index(index-8));
-            set.insert(to_2d_index(index-16));
+    fn get_pawn_moves(&mut self, color: Color, set: &mut HashSet<Pos2d>,index:usize) {
+        let multiplier:i32;
+        match color {
+            Color::White => {
+                multiplier = 1;
+
+            },
+            Color::Black => {
+                multiplier = -1;
+            }
+        }
+
+        let pos2d = to_2d_index(index);
+
+        let new_rank = pos2d.rank as i32 +(1*multiplier);
+        if new_rank < 0 || new_rank > 7 {
+            return;
+        }
+
+        println!("pawn moves file {} rank {}", pos2d.file, pos2d.rank);
+        let new_pos_2d = Pos2d{
+            file: pos2d.file,
+            rank: (pos2d.rank as i32 +(1*multiplier)) as u8
+        };
+
+        let piece = self.board[from_2d_index(new_pos_2d)];
+        if !piece.is_piece() {
+            set.insert(new_pos_2d);
+        }
+
+        // two moves for the first time of a pawn
+        if (color == Color::White && pos2d.rank == 1) || (color == Color::Black && pos2d.rank == 6) {
+            let new_pos_2d = Pos2d{
+                rank: (new_pos_2d.rank as i32 + multiplier) as u8,
+                ..new_pos_2d
+            };
+            let piece = self.board[from_2d_index(new_pos_2d)];
+            if !piece.is_piece() {
+                set.insert(new_pos_2d);
+            }
+        }
+        {
+            let to_position_2d = Pos2d{
+                file:new_pos_2d.file - 1,
+                ..new_pos_2d
+            };
+            let index = from_2d_index(to_position_2d);
+            let piece = self.board[index];
+
+            match piece.color() {
+                Some(piece_color) =>{
+                    if piece_color != color {
+                        set.insert(to_position_2d);
+                    }
+                }
+                _ =>{}
+            }
+        }
+        {
+            let to_position_2d = Pos2d{
+                file:new_pos_2d.file + 1,
+                ..new_pos_2d
+            };
+            let index = from_2d_index(to_position_2d);
+            let piece = self.board[index];
+
+            match piece.color() {
+                Some(piece_color) =>{
+                    if piece_color != color {
+                        set.insert(to_position_2d);
+                    }
+                }
+                _ =>{}
+            }
         }
     }
 
