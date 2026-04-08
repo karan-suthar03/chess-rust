@@ -40,7 +40,6 @@ impl Engine {
         let fen_parts: Vec<&str> = fen.split(' ').collect();
 
         let fen_board = fen_parts[0];
-        println!("fen board: {}", fen_board);
 
         let mut file = 0;
         let mut rank = 7;
@@ -60,8 +59,6 @@ impl Engine {
         }
 
         let fen_turn = fen_parts[1];
-
-        println!("fen turn: {}", fen_turn);
         let turn = match fen_turn {
             "b" => {
                 Color::Black
@@ -70,9 +67,6 @@ impl Engine {
                 Color::White
             }
         };
-
-        println!("{:?}", turn);
-
         Self {
             board,
             turn
@@ -98,7 +92,7 @@ impl Engine {
     //     board_2d
     // }
 
-    pub fn moves_for(&mut self, new_pos:&Pos2d) -> HashSet<Pos2d> {
+    pub fn moves_for(&self, new_pos:&Pos2d) -> HashSet<Pos2d> {
         let piece = self.board.get(new_pos);
 
         let mut set = HashSet::new();
@@ -118,7 +112,7 @@ impl Engine {
         set
     }
 
-    fn get_pawn_moves(&mut self, color: Color, set: &mut HashSet<Pos2d>,pos2d: &Pos2d) {
+    fn get_pawn_moves(&self, color: Color, set: &mut HashSet<Pos2d>,pos2d: &Pos2d) {
         let multiplier:i32;
         match color {
             Color::White => {
@@ -135,7 +129,6 @@ impl Engine {
             return;
         }
 
-        println!("pawn moves file {} rank {}", pos2d.file, pos2d.rank);
         let new_pos_2d = Pos2d{
             file: pos2d.file,
             rank: (pos2d.rank as i32 +(1*multiplier)) as u8
@@ -156,7 +149,7 @@ impl Engine {
                 }
             }
         }
-        {
+        if new_pos_2d.file != 0 {
             let attack_position_left = Pos2d{
                 file:new_pos_2d.file - 1,
                 ..new_pos_2d
@@ -172,7 +165,7 @@ impl Engine {
                 _ =>{}
             }
         }
-        {
+        if new_pos_2d.file != 7 {
             let attack_pos_right = Pos2d{
                 file:new_pos_2d.file + 1,
                 ..new_pos_2d
@@ -198,5 +191,29 @@ impl Engine {
                 println!();
             }
         }
+    }
+}
+
+pub trait EngineTestExt {
+    fn generate_moves(&self) -> HashSet<String>;
+}
+
+impl EngineTestExt for Engine {
+    fn generate_moves(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+
+        for file in 0..8 {
+            for rank in 0..8 {
+                let pos = Pos2d{
+                    file,
+                    rank
+                };
+                let map = self.moves_for(&pos);
+                for positions in map.iter() {
+                    set.insert(pos.to_string() + &*positions.to_string());
+                }
+            }
+        }
+        set
     }
 }

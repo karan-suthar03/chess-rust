@@ -3,7 +3,7 @@ mod engine;
 use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
 use crate::engine::core::*;
-use crate::engine::engine::Engine;
+use crate::engine::engine::{Engine,EngineTestExt};
 
 
 const CELL_SIZE: f32 = 100f32/4f32;
@@ -27,7 +27,9 @@ struct Game<'a>{
 
 impl<'a> Game<'a>{
     fn new(texture_map: &'a HashMap<Piece, Texture2D>) -> Game<'a>{
-        let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        // let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        let fen_board = "r1b2rk1/pp1p1p1p/4pp2/n1P5/2P5/5N2/PP2PPPP/R3KB1R w KQ - 0 11";
+        
         let engine = Engine::new_from_fen(fen_board);
         Game{
             engine,
@@ -103,6 +105,7 @@ impl<'a> Game<'a>{
                 file:board_x as u8,
                 rank:board_y as u8
             };
+            println!("new pos: {:?}", new_pos.to_string());
             match self.selected.as_ref() {
                 Some(selection) => {
                     if selection.cell == new_pos {

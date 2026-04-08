@@ -7,4 +7,4 @@ edition = "2024"
 macroquad = "0.4.14"
 
 [dev-dependencies]
-rstest = "0.26.1"
+csv = "1.4.0"

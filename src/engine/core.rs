@@ -6,7 +6,7 @@ pub enum Color{
 
 impl Color{
     pub fn flip(self) -> Self {
-        match self { 
+        match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
         }
@@ -89,6 +89,14 @@ impl Pos2d {
 
     pub fn to_index(&self) -> usize{
         (self.file + self.rank*8) as usize
+    }
+
+    pub fn to_string(&self) -> String {
+        let al = (('a' as u8) + self.file) as char;
+        let num = self.rank+1;
+
+        let string = String::new();
+        string + al.to_string().as_str() + &num.to_string()
     }
 }
 
