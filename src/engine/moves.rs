@@ -21,6 +21,9 @@ impl Engine {
                         Piece::Bishop(color) => {
                             self.get_bishop_moves(color, &mut set,&new_pos);
                         }
+                        Piece::Queen(color) => {
+                            self.get_queen_moves(color, &mut set,&new_pos)
+                        }
                         _ =>{}
                     }
                 }
@@ -103,190 +106,75 @@ impl Engine {
 
     // need cleanup
     fn get_rook_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
-        if pos2d.rank != 7 {
-            'rankUp: for rank in (pos2d.rank + 1)..8 {
-                let new_pos_2d = Pos2d {
-                    rank,
-                    ..*pos2d
+        let rook_dirs = [
+            (1, 0),   // up
+            (-1, 0),  // down
+            (0, 1),   // right
+            (0, -1),  // left
+        ];
+
+        self.slide_moves(color, set, pos2d, &rook_dirs);
+    }
+
+
+    fn get_bishop_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+        let bishop_dirs = [
+            (1, 1),    // top-right
+            (1, -1),   // top-left
+            (-1, -1),  // bottom-left
+            (-1, 1),   // bottom-right
+        ];
+
+        self.slide_moves(color, set, pos2d, &bishop_dirs);
+    }
+
+    fn slide_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos: &Pos2d, directions: &[(i8, i8)]) {
+        for (dr, df) in directions {
+            let mut r = pos.rank as i8;
+            let mut f = pos.file as i8;
+
+            loop {
+                r += dr;
+                f += df;
+
+                if r < 0 || r > 7 || f < 0 || f > 7 {
+                    break;
+                }
+
+                let new_pos = Pos2d {
+                    rank: r as u8,
+                    file: f as u8,
                 };
-                let piece = self.board.get(&new_pos_2d);
+
+                let piece = self.board.get(&new_pos);
 
                 match piece.color() {
                     None => {
-                        set.insert(new_pos_2d);
+                        set.insert(new_pos);
                     }
                     Some(piece_color) => {
                         if piece_color != color {
-                            set.insert(new_pos_2d);
+                            set.insert(new_pos);
                         }
-                        break 'rankUp;
-                    }
-                }
-            }
-        }
-        if pos2d.rank != 0 {
-            'rankDown : for rank in (0..pos2d.rank).rev() {
-                let new_pos_2d = Pos2d {
-                    rank,
-                    ..*pos2d
-                };
-                let piece = self.board.get(&new_pos_2d);
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'rankDown;
-                    }
-                }
-            }
-        }
-
-        if pos2d.file != 7 {
-            'fileRight : for file in (pos2d.file + 1)..8 {
-                let new_pos_2d = Pos2d {
-                    file,
-                    ..*pos2d
-                };
-                let piece = self.board.get(&new_pos_2d);
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'fileRight;
-                    }
-                }
-            }
-        }
-        if pos2d.file != 0 {
-            'fileLeft : for file in (0..pos2d.file).rev(){
-                let new_pos_2d = Pos2d {
-                    file,
-                    ..*pos2d
-                };
-                let piece = self.board.get(&new_pos_2d);
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'fileLeft;
+                        break;
                     }
                 }
             }
         }
     }
+    
+    fn get_queen_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d){
+        let queen_dirs = [
+            (1, 0),   // up
+            (-1, 0),  // down
+            (0, 1),   // right
+            (0, -1),  // left
+            (1, 1),    // top-right
+            (1, -1),   // top-left
+            (-1, -1),  // bottom-left
+            (-1, 1),   // bottom-right
+        ];
 
-
-    fn get_bishop_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
-        if pos2d.rank != 7 && pos2d.file != 7 {
-            'topRight: for delta in 1..8 {
-                if (pos2d.rank + delta) > 7 || (pos2d.file + delta) > 7{
-                    break 'topRight;
-                }
-                let new_pos_2d = Pos2d {
-                    rank: pos2d.rank + delta,
-                    file: pos2d.file + delta
-                };
-                let piece = self.board.get(&new_pos_2d);
-
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'topRight;
-                    }
-                }
-            }
-        }
-
-        if pos2d.rank != 7 && pos2d.file != 0 {
-            'topLeft: for delta in 1..8 {
-                if (pos2d.rank + delta) > 7 || (pos2d.file as i8 - delta as i8) < 0{
-                    break 'topLeft;
-                }
-                let new_pos_2d = Pos2d {
-                    rank:pos2d.rank + delta,
-                    file:(pos2d.file - delta)
-                };
-                let piece = self.board.get(&new_pos_2d);
-
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'topLeft;
-                    }
-                }
-            }
-        }
-
-        if pos2d.rank != 0 && pos2d.file != 0 {
-            'bottomLeft: for delta in 1..8 {
-                if (pos2d.rank as i8 - delta as i8) < 0 || (pos2d.file as i8 - delta as i8) < 0{
-                    break 'bottomLeft;
-                }
-                let new_pos_2d = Pos2d {
-                    rank:pos2d.rank - delta,
-                    file:(pos2d.file - delta)
-                };
-                let piece = self.board.get(&new_pos_2d);
-
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'bottomLeft;
-                    }
-                }
-            }
-        }
-
-        if pos2d.rank != 0 && pos2d.file != 7 {
-            'bottomRight: for delta in 1..8 {
-                if (pos2d.rank as i8 - delta as i8) < 0 || (pos2d.file + delta) > 7{
-                    break 'bottomRight;
-                }
-                let new_pos_2d = Pos2d {
-                    rank:pos2d.rank - delta,
-                    file:pos2d.file + delta
-                };
-                let piece = self.board.get(&new_pos_2d);
-
-                match piece.color() {
-                    None => {
-                        set.insert(new_pos_2d);
-                    }
-                    Some(piece_color) => {
-                        if piece_color != color {
-                            set.insert(new_pos_2d);
-                        }
-                        break 'bottomRight;
-                    }
-                }
-            }
-        }
+        self.slide_moves(color, set, pos2d, &queen_dirs);
     }
 }
