@@ -4,3 +4,6 @@ total: 60847, correct total: 15364, wrong total: 841
 total: 60847, correct total: 18845, wrong total: 4688
 total: 60847, correct total: 24745, wrong total: 1582
 total: 60847, correct total: 24745, wrong total: 1582
+total: 60847, correct total: 24745, wrong total: 1582
+total: 60847, correct total: 24745, wrong total: 1582
+total: 60847, correct total: 35051, wrong total: 2154

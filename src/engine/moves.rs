@@ -18,6 +18,9 @@ impl Engine {
                         Piece::Rook(color) => {
                             self.get_rook_moves(color, &mut set,&new_pos);
                         }
+                        Piece::Bishop(color) => {
+                            self.get_bishop_moves(color, &mut set,&new_pos);
+                        }
                         _ =>{}
                     }
                 }
@@ -184,4 +187,106 @@ impl Engine {
         }
     }
 
+
+    fn get_bishop_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+        if pos2d.rank != 7 && pos2d.file != 7 {
+            'topRight: for delta in 1..8 {
+                if (pos2d.rank + delta) > 7 || (pos2d.file + delta) > 7{
+                    break 'topRight;
+                }
+                let new_pos_2d = Pos2d {
+                    rank: pos2d.rank + delta,
+                    file: pos2d.file + delta
+                };
+                let piece = self.board.get(&new_pos_2d);
+
+                match piece.color() {
+                    None => {
+                        set.insert(new_pos_2d);
+                    }
+                    Some(piece_color) => {
+                        if piece_color != color {
+                            set.insert(new_pos_2d);
+                        }
+                        break 'topRight;
+                    }
+                }
+            }
+        }
+
+        if pos2d.rank != 7 && pos2d.file != 0 {
+            'topLeft: for delta in 1..8 {
+                if (pos2d.rank + delta) > 7 || (pos2d.file as i8 - delta as i8) < 0{
+                    break 'topLeft;
+                }
+                let new_pos_2d = Pos2d {
+                    rank:pos2d.rank + delta,
+                    file:(pos2d.file - delta)
+                };
+                let piece = self.board.get(&new_pos_2d);
+
+                match piece.color() {
+                    None => {
+                        set.insert(new_pos_2d);
+                    }
+                    Some(piece_color) => {
+                        if piece_color != color {
+                            set.insert(new_pos_2d);
+                        }
+                        break 'topLeft;
+                    }
+                }
+            }
+        }
+
+        if pos2d.rank != 0 && pos2d.file != 0 {
+            'bottomLeft: for delta in 1..8 {
+                if (pos2d.rank as i8 - delta as i8) < 0 || (pos2d.file as i8 - delta as i8) < 0{
+                    break 'bottomLeft;
+                }
+                let new_pos_2d = Pos2d {
+                    rank:pos2d.rank - delta,
+                    file:(pos2d.file - delta)
+                };
+                let piece = self.board.get(&new_pos_2d);
+
+                match piece.color() {
+                    None => {
+                        set.insert(new_pos_2d);
+                    }
+                    Some(piece_color) => {
+                        if piece_color != color {
+                            set.insert(new_pos_2d);
+                        }
+                        break 'bottomLeft;
+                    }
+                }
+            }
+        }
+
+        if pos2d.rank != 0 && pos2d.file != 7 {
+            'bottomRight: for delta in 1..8 {
+                if (pos2d.rank as i8 - delta as i8) < 0 || (pos2d.file + delta) > 7{
+                    break 'bottomRight;
+                }
+                let new_pos_2d = Pos2d {
+                    rank:pos2d.rank - delta,
+                    file:pos2d.file + delta
+                };
+                let piece = self.board.get(&new_pos_2d);
+
+                match piece.color() {
+                    None => {
+                        set.insert(new_pos_2d);
+                    }
+                    Some(piece_color) => {
+                        if piece_color != color {
+                            set.insert(new_pos_2d);
+                        }
+                        break 'bottomRight;
+                    }
+                }
+            }
+        }
+    }
 }
