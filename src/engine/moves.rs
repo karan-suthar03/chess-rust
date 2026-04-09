@@ -24,6 +24,9 @@ impl Engine {
                         Piece::Queen(color) => {
                             self.get_queen_moves(color, &mut set,&new_pos)
                         }
+                        Piece::Knight(color) => {
+                            self.get_knight_moves(color, &mut set,&new_pos);
+                        }
                         _ =>{}
                     }
                 }
@@ -162,7 +165,7 @@ impl Engine {
             }
         }
     }
-    
+
     fn get_queen_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d){
         let queen_dirs = [
             (1, 0),   // up
@@ -176,5 +179,44 @@ impl Engine {
         ];
 
         self.slide_moves(color, set, pos2d, &queen_dirs);
+    }
+
+    fn get_knight_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d){
+        let knight_dirs = [
+            (1, 2),
+            (-1, 2),
+            (1, -2),
+            (-1, -2),
+            (2, 1),
+            (-2, 1),
+            (2, -1),
+            (-2, -1)
+        ];
+
+        for (dir_file, dir_rank) in knight_dirs {
+            let new_rank = pos2d.rank as i8 + dir_rank;
+            let new_file = pos2d.file as i8 + dir_file;
+            if (new_file > 7 || new_file < 0) || (new_rank > 7 || new_rank < 0) {
+                continue;
+            }
+
+            let new_pos = Pos2d{
+                file:new_file as u8,
+                rank:new_rank as u8,
+            };
+
+            let piece = self.board.get(&new_pos);
+
+            match piece.color() {
+                None => {
+                    set.insert(new_pos);
+                }
+                Some(piece_color) => {
+                    if piece_color != color {
+                        set.insert(new_pos);
+                    }
+                }
+            }
+        }
     }
 }
