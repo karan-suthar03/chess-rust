@@ -7,10 +7,10 @@ impl Engine {
     fn check_for_check(&mut self, from: &Pos2d, to: &Pos2d) -> bool {
         let from_piece = self.board.get(&from);
         let to_piece = self.board.get(&to);
-        
+
         self.board.set_at(&from,Piece::None);
         self.board.set_at(&to,from_piece);
-        
+
         let mut set = HashSet::new();
         for file in 0..8 {
             for rank in 0..8 {
@@ -29,7 +29,7 @@ impl Engine {
                 }
             }
         }
-        
+
         let mut is_check = false;
         for mov in set.iter() {
             let piece = self.board.get(&mov);
@@ -45,7 +45,7 @@ impl Engine {
         }
         self.board.set_at(&from,from_piece);
         self.board.set_at(&to,to_piece);
-        
+
         is_check
     }
     pub fn moves_for(&mut self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>){
@@ -63,10 +63,10 @@ impl Engine {
             }
         }
     }
-    
+
     pub fn sudo_legal_moves_for(&self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>) {
         let piece = self.board.get(new_pos);
-        
+
         if piece.is_piece() {
             match piece {
                 Piece::Pawn(color) => {
@@ -84,10 +84,54 @@ impl Engine {
                 Piece::Knight(color) => {
                     self.get_knight_moves(color,set,&new_pos);
                 }
+                Piece::King(color) => {
+                    self.get_king_moves(color,set,&new_pos);
+                }
                 _ =>{}
             }
         }
     }
+
+    fn get_king_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+        let all_moves = [
+            (-1,-1),
+            (0,-1),
+            (1,-1),
+            (-1,0),
+            (0,0),
+            (1,0),
+            (-1,1),
+            (0,1),
+            (1,1)
+        ];
+
+        for (dir_file, dir_rank) in all_moves {
+            let new_rank = pos2d.rank as i8 + dir_rank;
+            let new_file = pos2d.file as i8 + dir_file;
+            if (new_file > 7 || new_file < 0) || (new_rank > 7 || new_rank < 0) {
+                continue;
+            }
+
+            let new_pos = Pos2d{
+                file:new_file as u8,
+                rank:new_rank as u8,
+            };
+
+            let piece = self.board.get(&new_pos);
+
+            match piece.color() {
+                None => {
+                    set.insert(new_pos);
+                }
+                Some(piece_color) => {
+                    if piece_color != color {
+                        set.insert(new_pos);
+                    }
+                }
+            }
+        }
+    }
+
 
     fn get_pawn_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
         let multiplier:i32;

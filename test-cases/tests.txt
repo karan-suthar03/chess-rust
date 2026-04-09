@@ -13,3 +13,4 @@ total: 1453115, correct total: 838780, wrong total: 52806 in 339 ms
 total: 1453115, correct total: 1111009, wrong total: 69570 in 393 ms
 total: 1453115, correct total: 1338906, wrong total: 82841 in 467 ms
 total: 1453115, correct total: 1338906, wrong total: 161 in 2251 ms
+total: 1453115, correct total: 1445549, wrong total: 161 in 2291 ms
