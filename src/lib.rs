@@ -7,6 +7,7 @@ mod tests {
     use std::collections::{BTreeSet, HashSet};
     use std::fs::OpenOptions;
     use std::io::Write;
+    use std::time::Instant;
 
     #[derive(Eq)]
     struct TestCase {
@@ -52,7 +53,7 @@ mod tests {
         let mut grand_total = 0;
         let mut grand_correct_total = 0;
         let mut grand_wrong_total = 0;
-
+        let start = Instant::now();
         for test_cases in hash_map.iter() {
             let engine = Engine::new_from_fen(&*test_cases.fen);
             let generated_moves = engine.generate_moves();
@@ -76,13 +77,13 @@ mod tests {
             grand_total += test_cases.moves.len();
             grand_correct_total += correct_count;
         }
-
+        let elapsed = start.elapsed();
         let mut file = OpenOptions::new()
             .append(true)
             .create(true) // Creates the file if it doesn't exist
             .open("test-cases/tests.txt")?;
 
-        writeln!(file,"total: {}, correct total: {}, wrong total: {}", grand_total, grand_correct_total, grand_wrong_total)?;
+        writeln!(file,"total: {}, correct total: {}, wrong total: {} in {} ms", grand_total, grand_correct_total, grand_wrong_total, elapsed.as_millis())?;
         Ok(())
     }
 }

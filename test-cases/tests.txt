@@ -7,3 +7,5 @@ total: 60847, correct total: 24745, wrong total: 1582
 total: 60847, correct total: 24745, wrong total: 1582
 total: 60847, correct total: 24745, wrong total: 1582
 total: 60847, correct total: 35051, wrong total: 2154
+total: 60847, correct total: 35051, wrong total: 2154 in 85 ms
+total: 1453115, correct total: 838780, wrong total: 52806 in 338 ms
