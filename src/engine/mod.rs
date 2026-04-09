@@ -97,11 +97,13 @@ impl Engine {
 }
 
 pub trait EngineTestExt {
-    fn generate_moves(&self) -> HashSet<String>;
+    fn generate_moves(&mut self) -> HashSet<String>;
 }
 
 impl EngineTestExt for Engine {
-    fn generate_moves(&self) -> HashSet<String> {
+
+    // i just realized its too dumb
+    fn generate_moves(&mut self) -> HashSet<String> {
         let mut set = HashSet::new();
 
         for file in 0..8 {
@@ -110,8 +112,10 @@ impl EngineTestExt for Engine {
                     file,
                     rank
                 };
-                let map = self.moves_for(&pos);
-                for positions in map.iter() {
+
+                let mut movs = HashSet::new();
+                self.moves_for(&pos, &mut movs);
+                for positions in movs.iter() {
                     set.insert(pos.to_string() + &*positions.to_string());
                 }
             }

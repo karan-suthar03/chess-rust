@@ -116,14 +116,16 @@ impl<'a> Game<'a>{
                             self.selected = None;
                         }else {
                             let mut selection = Selection::new(new_pos);
-                            selection.moves = self.engine.moves_for(&new_pos);
+                            selection.moves.clear();
+                            self.engine.moves_for(&new_pos, &mut selection.moves);
                             self.selected = Some(selection);
                         }
                     }
                 }
                 None => {
                     let mut selection = Selection::new(new_pos);
-                    selection.moves = self.engine.moves_for(&new_pos);
+                    selection.moves.clear();
+                    self.engine.moves_for(&new_pos, &mut selection.moves);
                     self.selected = Some(selection);
                 }
             }

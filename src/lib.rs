@@ -55,7 +55,7 @@ mod tests {
         let mut grand_wrong_total = 0;
         let start = Instant::now();
         for test_cases in hash_map.iter() {
-            let engine = Engine::new_from_fen(&*test_cases.fen);
+            let mut engine = Engine::new_from_fen(&*test_cases.fen);
             let generated_moves = engine.generate_moves();
             // println!("{}", test_cases.fen);
             // println!("{:?}", generated_moves);

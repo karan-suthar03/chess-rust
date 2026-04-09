@@ -4,36 +4,89 @@ use std::collections::HashSet;
 
 impl Engine {
 
-    pub fn moves_for(&self, new_pos:&Pos2d) -> HashSet<Pos2d> {
-        let piece = self.board.get(new_pos);
-
+    fn check_for_check(&mut self, from: &Pos2d, to: &Pos2d) -> bool {
+        let from_piece = self.board.get(&from);
+        let to_piece = self.board.get(&to);
+        
+        self.board.set_at(&from,Piece::None);
+        self.board.set_at(&to,from_piece);
+        
         let mut set = HashSet::new();
-        match piece.color() {
-            Some(color) => {
-                if color == self.turn {
-                    match piece {
-                        Piece::Pawn(color) => {
-                            self.get_pawn_moves(color, &mut set,&new_pos);
+        for file in 0..8 {
+            for rank in 0..8 {
+                let pos = Pos2d{
+                    file,
+                    rank
+                };
+                let piece = self.board.get(&pos);
+                match piece.color() {
+                    Some(color) => {
+                        if color != from_piece.color().unwrap() {
+                            self.sudo_legal_moves_for(&pos, &mut set);
                         }
-                        Piece::Rook(color) => {
-                            self.get_rook_moves(color, &mut set,&new_pos);
-                        }
-                        Piece::Bishop(color) => {
-                            self.get_bishop_moves(color, &mut set,&new_pos);
-                        }
-                        Piece::Queen(color) => {
-                            self.get_queen_moves(color, &mut set,&new_pos)
-                        }
-                        Piece::Knight(color) => {
-                            self.get_knight_moves(color, &mut set,&new_pos);
-                        }
-                        _ =>{}
                     }
+                    None => {}
                 }
             }
-            None => {}
         }
-        set
+        
+        let mut is_check = false;
+        for mov in set.iter() {
+            let piece = self.board.get(&mov);
+            match piece {
+                Piece::King(color) => {
+                    if color == from_piece.color().unwrap() {
+                        is_check = true;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.board.set_at(&from,from_piece);
+        self.board.set_at(&to,to_piece);
+        
+        is_check
+    }
+    pub fn moves_for(&mut self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>){
+        let piece = self.board.get(new_pos);
+        if piece.color() != Some(self.turn) {
+            return;
+        }
+
+        self.sudo_legal_moves_for(new_pos, set);
+        let moves: Vec<Pos2d> = set.drain().collect();
+
+        for pos in moves {
+            if !self.check_for_check(new_pos, &pos) {
+                set.insert(pos);
+            }
+        }
+    }
+    
+    pub fn sudo_legal_moves_for(&self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>) {
+        let piece = self.board.get(new_pos);
+        
+        if piece.is_piece() {
+            match piece {
+                Piece::Pawn(color) => {
+                    self.get_pawn_moves(color,set,&new_pos);
+                }
+                Piece::Rook(color) => {
+                    self.get_rook_moves(color,set,&new_pos);
+                }
+                Piece::Bishop(color) => {
+                    self.get_bishop_moves(color,set,&new_pos);
+                }
+                Piece::Queen(color) => {
+                    self.get_queen_moves(color,set,&new_pos)
+                }
+                Piece::Knight(color) => {
+                    self.get_knight_moves(color,set,&new_pos);
+                }
+                _ =>{}
+            }
+        }
     }
 
     fn get_pawn_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
