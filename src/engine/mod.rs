@@ -10,7 +10,8 @@ use crate::engine::core::{Color, Piece, Pos2d};
 #[derive(Debug)]
 pub struct Engine {
     board: Board,
-    turn: Color
+    turn: Color,
+    en_peasant: Option<Pos2d>,
 }
 
 impl Engine {
@@ -18,7 +19,8 @@ impl Engine {
         let board = Board::new();
         Self {
             board,
-            turn: Color::White
+            turn: Color::White,
+            en_peasant: None,
         }
     }
 
@@ -72,16 +74,58 @@ impl Engine {
                 Color::White
             }
         };
+
+        let fen_en = fen_parts[3];
+        let en_peasant = if fen_en != "-" {
+            Some(Pos2d::from_string(fen_en))
+        }else{
+            None
+        };
+
         Self {
             board,
-            turn
+            turn,
+            en_peasant
         }
     }
 
     pub fn make_move(&mut self, from: &Pos2d, to: &Pos2d) {
         let piece = self.board.get(&from);
+        let mut is_pawn = false;
+        match piece {
+            Piece::Pawn(_) => {
+                is_pawn = true;
+            }
+            _ => {}
+        }
+
         self.board.set_at(&from,Piece::None);
         self.board.set_at(&to,piece);
+
+        if is_pawn && self.en_peasant.is_some() && self.en_peasant.unwrap() == *to {
+            self.board.set_at(&Pos2d{
+                rank: ((to.rank as i8) + if from.rank < to.rank { -1 } else { 1 }) as u8,
+                ..*to
+            },Piece::None);
+            self.en_peasant = None;
+        }
+
+        if is_pawn {
+            if (from.rank as i8 - to.rank as i8).abs() == 2 {
+                if from.rank < to.rank{
+                    self.en_peasant = Some(Pos2d{
+                        rank:to.rank - 1,
+                        ..*to
+                    })
+                } else {
+                    self.en_peasant = Some(Pos2d{
+                        rank:to.rank + 1,
+                        ..*to
+                    })
+                }
+            }
+        }
+
         self.turn = self.turn.flip();
     }
 

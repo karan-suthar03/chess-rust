@@ -98,5 +98,14 @@ impl Pos2d {
         let string = String::new();
         string + al.to_string().as_str() + &num.to_string()
     }
+
+    pub fn from_string(string: &str) -> Pos2d {
+        let al = string.chars().nth(0).unwrap();
+        let num = string.chars().nth(1).unwrap();
+        Pos2d {
+            file: al as u8 - b'a' as u8,
+            rank: ((num.to_digit(10).unwrap()) - 1) as u8
+        }
+    }
 }
 

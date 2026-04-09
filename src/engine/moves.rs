@@ -185,6 +185,9 @@ impl Engine {
                 }
                 _ =>{}
             }
+            if self.en_peasant.is_some() && self.en_peasant.unwrap() == attack_position_left {
+                set.insert(attack_position_left);
+            }
         }
         if new_pos_2d.file != 7 {
             let attack_pos_right = Pos2d{
@@ -200,6 +203,9 @@ impl Engine {
                     }
                 }
                 _ =>{}
+            }
+            if self.en_peasant.is_some() && self.en_peasant.unwrap() == attack_pos_right {
+                set.insert(attack_pos_right);
             }
         }
     }
