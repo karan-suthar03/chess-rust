@@ -1,13 +1,12 @@
 mod engine;
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
-use crate::engine::engine::{Engine, EngineTestExt};
+    use crate::engine::{Engine, EngineTestExt};
     use csv::Reader;
     use std::cmp::Ordering;
     use std::collections::{BTreeSet, HashSet};
-    use std::fmt::format;
     use std::fs::OpenOptions;
+    use std::io::Write;
 
     #[derive(Eq)]
     struct TestCase {
