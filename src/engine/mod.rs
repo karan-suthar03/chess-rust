@@ -148,7 +148,7 @@ impl EngineTestExt for Engine {
 
     // i just realized its too dumb
     fn generate_moves(&mut self) -> HashSet<String> {
-        let mut set = HashSet::new();
+        let mut set:HashSet<String> = HashSet::new();
 
         for file in 0..8 {
             for rank in 0..8 {
@@ -160,7 +160,7 @@ impl EngineTestExt for Engine {
                 let mut movs = HashSet::new();
                 self.moves_for(&pos, &mut movs);
                 for positions in movs.iter() {
-                    set.insert(pos.to_string() + &*positions.to_string());
+                    set.insert(positions.to_string());
                 }
             }
         }

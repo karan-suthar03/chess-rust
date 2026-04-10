@@ -10,12 +10,13 @@ const CELL_SIZE: f32 = 100f32/4f32;
 
 struct Selection{
     cell: Pos2d,
-    moves: HashSet<Pos2d>,
+    moves: HashSet<Move>,
+    highlighted: HashSet<Pos2d>,
 }
 
 impl Selection {
     fn new(pos2d: Pos2d) -> Self {
-        Selection{cell: pos2d,moves: HashSet::new()}
+        Selection{cell: pos2d,moves: HashSet::new(),highlighted: HashSet::new()}
     }
 }
 
@@ -59,7 +60,7 @@ impl<'a> Game<'a>{
                     }else { 
                         let selection = self.selected.as_ref().unwrap();
                         
-                        if selection.moves.contains(&loc_2d) {
+                        if selection.highlighted.contains(&loc_2d) {
                             color = RED;
                         }
                         
@@ -111,13 +112,15 @@ impl<'a> Game<'a>{
                     if selection.cell == new_pos {
                         self.selected = None;
                     }else {
-                        if selection.moves.contains(&new_pos) {
+                        if selection.highlighted.contains(&new_pos) {
                             self.engine.make_move(&selection.cell, &new_pos);
                             self.selected = None;
                         }else {
                             let mut selection = Selection::new(new_pos);
                             selection.moves.clear();
+                            selection.highlighted.clear();
                             self.engine.moves_for(&new_pos, &mut selection.moves);
+                            selection.highlighted = selection.moves.iter().map(|x| {x.to}).collect();
                             self.selected = Some(selection);
                         }
                     }
@@ -125,7 +128,9 @@ impl<'a> Game<'a>{
                 None => {
                     let mut selection = Selection::new(new_pos);
                     selection.moves.clear();
+                    selection.highlighted.clear();
                     self.engine.moves_for(&new_pos, &mut selection.moves);
+                    selection.highlighted = selection.moves.iter().map(|x| {x.to}).collect();
                     self.selected = Some(selection);
                 }
             }

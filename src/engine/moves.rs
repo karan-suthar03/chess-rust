@@ -1,4 +1,4 @@
-use crate::engine::core::{Color, Piece, Pos2d};
+use crate::engine::core::{Color, Move, Piece, Pos2d};
 use crate::engine::Engine;
 use std::collections::HashSet;
 
@@ -46,7 +46,7 @@ impl Engine {
 
         let mut is_check = false;
         for mov in set.iter() {
-            let piece = self.board.get(&mov);
+            let piece = self.board.get(&mov.to);
             match piece {
                 Piece::King(color) => {
                     if color == from_piece.color().unwrap() {
@@ -69,23 +69,23 @@ impl Engine {
 
         is_check
     }
-    pub fn moves_for(&mut self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>){
+    pub fn moves_for(&mut self, new_pos:&Pos2d, set: &mut HashSet<Move>){
         let piece = self.board.get(new_pos);
         if piece.color() != Some(self.turn) {
             return;
         }
 
         self.sudo_legal_moves_for(new_pos, set);
-        let moves: Vec<Pos2d> = set.drain().collect();
+        let moves: Vec<Move> = set.drain().collect();
 
         for pos in moves {
-            if !self.check_for_check(new_pos, &pos) {
+            if !self.check_for_check(new_pos, &pos.to) {
                 set.insert(pos);
             }
         }
     }
 
-    pub fn sudo_legal_moves_for(&self, new_pos:&Pos2d, set: &mut HashSet<Pos2d>) {
+    pub fn sudo_legal_moves_for(&self, new_pos:&Pos2d, set: &mut HashSet<Move>) {
         let piece = self.board.get(new_pos);
 
         if piece.is_piece() {
@@ -113,7 +113,7 @@ impl Engine {
         }
     }
 
-    fn get_king_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+    fn get_king_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d) {
         let all_moves = [
             (-1,-1),
             (0,-1),
@@ -142,11 +142,19 @@ impl Engine {
 
             match piece.color() {
                 None => {
-                    set.insert(new_pos);
+                    set.insert(Move{
+                        from:*pos2d,
+                        to:new_pos,
+                        promotion:None
+                    });
                 }
                 Some(piece_color) => {
                     if piece_color != color {
-                        set.insert(new_pos);
+                        set.insert(Move{
+                            from:*pos2d,
+                            to:new_pos,
+                            promotion:None
+                        });
                     }
                 }
             }
@@ -154,7 +162,7 @@ impl Engine {
     }
 
 
-    fn get_pawn_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+    fn get_pawn_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d) {
         let multiplier:i32;
         match color {
             Color::White => {
@@ -176,9 +184,11 @@ impl Engine {
             rank: (pos2d.rank as i32 +(1*multiplier)) as u8
         };
 
+        let mut vec:Vec<Pos2d> = Vec::new();
+
         let piece = self.board.get(&new_pos_2d);
         if !piece.is_piece() {
-            set.insert(new_pos_2d);
+            vec.push(new_pos_2d);
             // two moves for the first time of a pawn
             if (color == Color::White && pos2d.rank == 1) || (color == Color::Black && pos2d.rank == 6) {
                 let new_pos_2d = Pos2d{
@@ -187,7 +197,7 @@ impl Engine {
                 };
                 let piece = self.board.get(&new_pos_2d);
                 if !piece.is_piece() {
-                    set.insert(new_pos_2d);
+                    vec.push(new_pos_2d);
                 }
             }
         }
@@ -201,13 +211,13 @@ impl Engine {
             match piece.color() {
                 Some(piece_color) =>{
                     if piece_color != color {
-                        set.insert(attack_position_left);
+                        vec.push(attack_position_left);
                     }
                 }
                 _ =>{}
             }
             if self.en_peasant.is_some() && self.en_peasant.unwrap() == attack_position_left {
-                set.insert(attack_position_left);
+                vec.push(attack_position_left);
             }
         }
         if new_pos_2d.file != 7 {
@@ -220,19 +230,48 @@ impl Engine {
             match piece.color() {
                 Some(piece_color) =>{
                     if piece_color != color {
-                        set.insert(attack_pos_right);
+                        vec.push(attack_pos_right);
                     }
                 }
                 _ =>{}
             }
             if self.en_peasant.is_some() && self.en_peasant.unwrap() == attack_pos_right {
-                set.insert(attack_pos_right);
+                vec.push(attack_pos_right);
+            }
+        }
+
+        for new_pos in vec {
+            let is_promotion_rank = (color == Color::White && new_pos.rank == 7)
+                || (color == Color::Black && new_pos.rank == 0);
+
+            if is_promotion_rank {
+                let mut my_vec1 = Vec::new();
+                my_vec1.push(Piece::Queen(color));
+                my_vec1.push(Piece::Bishop(color));
+                my_vec1.push(Piece::Knight(color));
+                my_vec1.push(Piece::Rook(color));
+
+                for promo in my_vec1 {
+                    let new_move = Move{
+                        from: *pos2d,
+                        to: new_pos,
+                        promotion: Some(promo),
+                    };
+                    set.insert(new_move);
+                }
+            } else {
+                let new_move = Move{
+                    from: *pos2d,
+                    to: new_pos,
+                    promotion: None,
+                };
+                set.insert(new_move);
             }
         }
     }
 
     // need cleanup
-    fn get_rook_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+    fn get_rook_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d) {
         let rook_dirs = [
             (1, 0),   // up
             (-1, 0),  // down
@@ -244,7 +283,7 @@ impl Engine {
     }
 
 
-    fn get_bishop_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d) {
+    fn get_bishop_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d) {
         let bishop_dirs = [
             (1, 1),    // top-right
             (1, -1),   // top-left
@@ -255,7 +294,7 @@ impl Engine {
         self.slide_moves(color, set, pos2d, &bishop_dirs);
     }
 
-    fn slide_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos: &Pos2d, directions: &[(i8, i8)]) {
+    fn slide_moves(&self, color: Color, set: &mut HashSet<Move>, pos: &Pos2d, directions: &[(i8, i8)]) {
         for (dr, df) in directions {
             let mut r = pos.rank as i8;
             let mut f = pos.file as i8;
@@ -277,11 +316,19 @@ impl Engine {
 
                 match piece.color() {
                     None => {
-                        set.insert(new_pos);
+                        set.insert(Move{
+                            from:*pos,
+                            to:new_pos,
+                            promotion:None
+                        });
                     }
                     Some(piece_color) => {
                         if piece_color != color {
-                            set.insert(new_pos);
+                            set.insert(Move{
+                                from:*pos,
+                                to:new_pos,
+                                promotion:None
+                            });
                         }
                         break;
                     }
@@ -290,7 +337,7 @@ impl Engine {
         }
     }
 
-    fn get_queen_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d){
+    fn get_queen_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d){
         let queen_dirs = [
             (1, 0),   // up
             (-1, 0),  // down
@@ -305,7 +352,7 @@ impl Engine {
         self.slide_moves(color, set, pos2d, &queen_dirs);
     }
 
-    fn get_knight_moves(&self, color: Color, set: &mut HashSet<Pos2d>, pos2d: &Pos2d){
+    fn get_knight_moves(&self, color: Color, set: &mut HashSet<Move>, pos2d: &Pos2d){
         let knight_dirs = [
             (1, 2),
             (-1, 2),
@@ -333,11 +380,19 @@ impl Engine {
 
             match piece.color() {
                 None => {
-                    set.insert(new_pos);
+                    set.insert(Move{
+                        from:*pos2d,
+                        to:new_pos,
+                        promotion:None
+                    });
                 }
                 Some(piece_color) => {
                     if piece_color != color {
-                        set.insert(new_pos);
+                        set.insert(Move{
+                            from:*pos2d,
+                            to:new_pos,
+                            promotion:None
+                        });
                     }
                 }
             }

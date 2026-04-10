@@ -25,7 +25,9 @@ pub enum Piece{
     Queen(Color),
 }
 
+use std::collections::HashMap;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 impl Piece {
     pub fn color(&self) -> Option<Color> {
@@ -109,3 +111,40 @@ impl Pos2d {
     }
 }
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Move{
+    pub from: Pos2d,
+    pub to: Pos2d,
+    pub promotion: Option<Piece>,
+}
+
+impl Move {
+    pub fn to_string(&self) -> String {
+        let from_str = self.from.to_string();
+        let to_str = self.to.to_string();
+        let promo = match self.promotion {
+            None => {""}
+            Some(piece) => {
+                match piece {
+                    Piece::Knight(_) => {
+                        "n"
+                    }
+                    Piece::Bishop(_) => {
+                        "b"
+                    }
+                    Piece::Rook(_) => {
+                        "r"
+                    }
+                    Piece::Queen(_) => {
+                        "q"
+                    }
+                    _ => {
+                        ""
+                    }
+                }
+            }
+        };
+        format!("{}{}{}", from_str, to_str, promo)
+    }
+}
