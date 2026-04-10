@@ -70,6 +70,7 @@ mod tests {
                     }
                     _ => {
                         wrong_count += 1;
+                        println!("{} {:?}",test_cases.fen, mov);
                     }
                 }
             }

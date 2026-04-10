@@ -6,6 +6,20 @@ impl Engine {
 
     fn check_for_check(&mut self, from: &Pos2d, to: &Pos2d) -> bool {
         let from_piece = self.board.get(&from);
+        let mut is_pawn = false;
+        match from_piece {
+            Piece::Pawn(_) => {
+                is_pawn = true;
+            }
+            _ => {}
+        }
+
+        if is_pawn && self.en_peasant.is_some() && self.en_peasant.unwrap() == *to {
+            self.board.set_at(&Pos2d{
+                rank: ((to.rank as i8) + if from.rank < to.rank { -1 } else { 1 }) as u8,
+                ..*to
+            },Piece::None);
+        }
         let to_piece = self.board.get(&to);
 
         self.board.set_at(&from,Piece::None);
@@ -42,6 +56,13 @@ impl Engine {
                 }
                 _ => {}
             }
+        }
+
+        if is_pawn && self.en_peasant.is_some() && self.en_peasant.unwrap() == *to {
+            self.board.set_at(&Pos2d{
+                rank: ((to.rank as i8) + if from.rank < to.rank { -1 } else { 1 }) as u8,
+                ..*to
+            },Piece::Pawn(from_piece.color().unwrap().flip()));
         }
         self.board.set_at(&from,from_piece);
         self.board.set_at(&to,to_piece);
