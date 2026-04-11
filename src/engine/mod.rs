@@ -211,8 +211,8 @@ impl Engine {
                 rank: ((to.rank as i8) + if from.rank < to.rank { -1 } else { 1 }) as u8,
                 ..*to
             },Piece::None);
-            self.en_peasant = None;
         }
+        self.en_peasant = None;
 
         if is_pawn {
             if (from.rank as i8 - to.rank as i8).abs() == 2 {
