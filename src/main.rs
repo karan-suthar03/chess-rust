@@ -28,8 +28,8 @@ struct Game<'a>{
 
 impl<'a> Game<'a>{
     fn new(texture_map: &'a HashMap<Piece, Texture2D>) -> Game<'a>{
-        // let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        let fen_board = "1K6/2P5/Q6p/5b1p/5k2/8/1B4P1/8 w - - 3 55";
+        let fen_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        // let fen_board = "1K6/2P5/Q6p/5b1p/5k2/8/1B4P1/8 w - - 3 55";
         
         let engine = Engine::new_from_fen(fen_board);
         Game{

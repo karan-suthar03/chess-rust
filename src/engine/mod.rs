@@ -12,6 +12,8 @@ pub struct Engine {
     board: Board,
     turn: Color,
     en_peasant: Option<Pos2d>,
+    black_castle: i8,
+    white_castle: i8,
 }
 
 impl Engine {
@@ -21,6 +23,8 @@ impl Engine {
             board,
             turn: Color::White,
             en_peasant: None,
+            black_castle: 3,
+            white_castle: 3,
         }
     }
 
@@ -82,25 +86,125 @@ impl Engine {
             None
         };
 
+        let castle_fen = fen_parts[2];
+        let black_castle = if castle_fen != "-" {
+            if castle_fen.contains('k') && castle_fen.contains('q') {
+                3
+            } else if castle_fen.contains('k') {
+                1
+            } else if castle_fen.contains('q') {
+                2
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
+        let white_castle = if castle_fen != "-" {
+            if castle_fen.contains('K') && castle_fen.contains('Q') {
+                3
+            } else if castle_fen.contains('K') {
+                1
+            } else if castle_fen.contains('Q') {
+                2
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
         Self {
             board,
             turn,
-            en_peasant
+            en_peasant,
+            white_castle,
+            black_castle
         }
     }
 
     pub fn make_move(&mut self, from: &Pos2d, to: &Pos2d) {
         let piece = self.board.get(&from);
+        let captured_piece = self.board.get(&to);
         let mut is_pawn = false;
+        let mut is_king = false;
+        let mut is_rook = false;
         match piece {
             Piece::Pawn(_) => {
                 is_pawn = true;
             }
+            Piece::King(_) => {
+                is_king = true;
+            }
+            Piece::Rook(_) => {
+                is_rook = true;
+            }
             _ => {}
+        }
+
+        match captured_piece {
+            Piece::Rook(Color::White) => {
+                if to.rank == 0 && to.file == 0 {
+                    self.white_castle &= !2;
+                } else if to.rank == 0 && to.file == 7 {
+                    self.white_castle &= !1;
+                }
+            }
+            Piece::Rook(Color::Black) => {
+                if to.rank == 7 && to.file == 0 {
+                    self.black_castle &= !2;
+                } else if to.rank == 7 && to.file == 7 {
+                    self.black_castle &= !1;
+                }
+            }
+            _ => {}
+        }
+
+        if is_king {
+            match piece.color().unwrap() {
+                Color::White => self.white_castle = 0,
+                Color::Black => self.black_castle = 0,
+            }
+        }
+
+        if is_rook {
+            match piece.color().unwrap() {
+                Color::White => {
+                    if from.rank == 0 && from.file == 0 {
+                        self.white_castle &= !2;
+                    } else if from.rank == 0 && from.file == 7 {
+                        self.white_castle &= !1;
+                    }
+                }
+                Color::Black => {
+                    if from.rank == 7 && from.file == 0 {
+                        self.black_castle &= !2;
+                    } else if from.rank == 7 && from.file == 7 {
+                        self.black_castle &= !1;
+                    }
+                }
+            }
         }
 
         self.board.set_at(&from,Piece::None);
         self.board.set_at(&to,piece);
+
+        if is_king && (from.file as i8 - to.file as i8).abs() == 2 {
+            if to.file == 6 {
+                let rook_from = Pos2d { file: 7, rank: from.rank };
+                let rook_to = Pos2d { file: 5, rank: from.rank };
+                let rook = self.board.get(&rook_from);
+                self.board.set_at(&rook_from, Piece::None);
+                self.board.set_at(&rook_to, rook);
+            } else if to.file == 2 {
+                let rook_from = Pos2d { file: 0, rank: from.rank };
+                let rook_to = Pos2d { file: 3, rank: from.rank };
+                let rook = self.board.get(&rook_from);
+                self.board.set_at(&rook_from, Piece::None);
+                self.board.set_at(&rook_to, rook);
+            }
+        }
 
         if is_pawn && self.en_peasant.is_some() && self.en_peasant.unwrap() == *to {
             self.board.set_at(&Pos2d{

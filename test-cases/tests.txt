@@ -17,3 +17,5 @@ total: 1453115, correct total: 1445549, wrong total: 161 in 2291 ms
 total: 1453115, correct total: 1445632, wrong total: 161 in 2250 ms
 total: 1453115, correct total: 1445634, wrong total: 161 in 2261 ms
 total: 1453115, correct total: 1446278, wrong total: 0 in 4553 ms
+total: 1453115, correct total: 1453115, wrong total: 0 in 4348 ms
+total: 1453115, correct total: 1453115, wrong total: 0 in 4328 ms

@@ -79,7 +79,23 @@ impl Engine {
         let moves: Vec<Move> = set.drain().collect();
 
         for pos in moves {
-            if !self.check_for_check(new_pos, &pos.to) {
+            let is_king_castle = matches!(piece, Piece::King(_))
+                && (new_pos.file as i8 - pos.to.file as i8).abs() == 2;
+
+            if is_king_castle {
+                let in_check_now = self.check_for_check(new_pos, new_pos);
+                let middle_file = if pos.to.file > new_pos.file { new_pos.file + 1 } else { new_pos.file - 1 };
+                let middle = Pos2d {
+                    file: middle_file,
+                    rank: new_pos.rank,
+                };
+                let through_check = self.check_for_check(new_pos, &middle);
+                let end_check = self.check_for_check(new_pos, &pos.to);
+
+                if !in_check_now && !through_check && !end_check {
+                    set.insert(pos);
+                }
+            } else if !self.check_for_check(new_pos, &pos.to) {
                 set.insert(pos);
             }
         }
@@ -157,6 +173,49 @@ impl Engine {
                         });
                     }
                 }
+            }
+        }
+
+        let rights = if color == Color::White {
+            self.white_castle
+        } else {
+            self.black_castle
+        };
+
+
+        if rights == 1 || rights == 3 {
+            let rook_pos = Pos2d { file: 7, rank: pos2d.rank };
+            let f_pos = Pos2d { file: 5, rank: pos2d.rank };
+            let g_pos = Pos2d { file: 6, rank: pos2d.rank };
+
+            if self.board.get(&rook_pos) == Piece::Rook(color)
+                && self.board.get(&f_pos) == Piece::None
+                && self.board.get(&g_pos) == Piece::None
+            {
+                set.insert(Move {
+                    from: *pos2d,
+                    to: g_pos,
+                    promotion: None,
+                });
+            }
+        }
+
+        if rights == 2 || rights == 3 {
+            let rook_pos = Pos2d { file: 0, rank: pos2d.rank };
+            let b_pos = Pos2d { file: 1, rank: pos2d.rank };
+            let c_pos = Pos2d { file: 2, rank: pos2d.rank };
+            let d_pos = Pos2d { file: 3, rank: pos2d.rank };
+
+            if self.board.get(&rook_pos) == Piece::Rook(color)
+                && self.board.get(&b_pos) == Piece::None
+                && self.board.get(&c_pos) == Piece::None
+                && self.board.get(&d_pos) == Piece::None
+            {
+                set.insert(Move {
+                    from: *pos2d,
+                    to: c_pos,
+                    promotion: None,
+                });
             }
         }
     }
